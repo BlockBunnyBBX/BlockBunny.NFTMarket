@@ -90,7 +90,8 @@ contract Marketplace is ReentrancyGuard, Ownable,  IMarketplace{
         for (uint32 i = 0; i < supply; i++) {
             uint256 tokenID = INFTCollection(collection).MintNFT(
                 tokenURI,
-                address(this)
+                //address(this)
+                msg.sender
             );
             _nftInfoForSale[collection][tokenID] = SaleInfo({
                 seller: msg.sender,

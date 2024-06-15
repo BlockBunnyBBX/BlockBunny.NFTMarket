@@ -169,7 +169,7 @@ contract MarketplaceTest is Test {
 
         changePrank(USER);
 
-        marketplace.buyForListedItem{value: COLLECTION_FEE}(collectionAddress, 1); 
+        marketplace.buyForListedItem{value: COLLECTION_FEE}(collectionAddress, 1 ether); 
     }
 
     function test_RevertBuyWithIncorrectFee() public {
