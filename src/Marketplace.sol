@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
-import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ERC721} from "../lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+import {Ownable} from "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -17,7 +17,7 @@ interface INFTCollection {
 
 /// @title Marketplace
 /// @notice This contract is a marketplace for buying and selling NFTs
-contract Marketplace is ERC721, ReentrancyGuard,  IMarketplace{
+contract Marketplace is ReentrancyGuard, Ownable,  IMarketplace{
 
     IERC20 public immutable token;
     address[] public _allCollections;
@@ -29,7 +29,7 @@ contract Marketplace is ERC721, ReentrancyGuard,  IMarketplace{
      * @dev Create a new Marketplace instance.
      * @param tokenAddress The address of the token contract.
      */
-    constructor(address tokenAddress) ERC721("MyNFT", "MNFT") {
+    constructor(address tokenAddress)Ownable(msg.sender) {
         token = IERC20(tokenAddress);
     }
 
@@ -48,7 +48,7 @@ contract Marketplace is ERC721, ReentrancyGuard,  IMarketplace{
         uint256 maxSupply
     ) external payable override returns (address) {
         if (msg.value != LISTING_PRICE) {
-            revert Marketplace__InvalidPrice();
+            revert Marketplace__IncorrectPrice();
         }
         if (maxSupply <= 0) {
             revert Marketplace__IncorrectSupply();
@@ -82,7 +82,7 @@ contract Marketplace is ERC721, ReentrancyGuard,  IMarketplace{
         uint32 supply,
         uint256 price
     ) external {
-        if (price == 0) {revert Marketplace__InvalidPrice();}
+        if (price == 0) {revert Marketplace__IncorrectPrice();}
         if (!(supply > 0)) {
             revert Marketplace__IncorrectSupply();
         }
@@ -116,10 +116,10 @@ contract Marketplace is ERC721, ReentrancyGuard,  IMarketplace{
         uint256 tokenId, 
         uint256 price
     ) external payable override {
-        if(msg.value != LISTING_PRICE){ revert Marketplace__InvalidPrice();}
-        //if (_nftInfoForSale[collection][tokenId].seller == address(0)) revert Marketplace__TokenNotForSale();
-        if (price == 0) revert Marketplace__InvalidPrice();
-        if (ownerOf(tokenId) != msg.sender) revert Marketplace__NotOwner();
+        if(msg.value != LISTING_PRICE){ revert Marketplace__IncorrectListingPrice();}
+        isOwner(tokenOwner(collection, tokenId));
+        if (price == 0) revert Marketplace__IncorrectPrice();
+        
         if (
             !(IERC721(collection).isApprovedForAll(msg.sender, address(this)))
         ) {
@@ -150,8 +150,9 @@ contract Marketplace is ERC721, ReentrancyGuard,  IMarketplace{
         }
         
         if (!(saleInfo.price == msg.value)) {
-            revert Marketplace__InsufficientPrice();
+            revert Marketplace__IncorrectPrice();
         }
+        if (_nftInfoForSale[collection][tokenID].seller == address(0)) revert Marketplace__TokenNotForSale();
 
         IERC721(collection).transferFrom(address(this), msg.sender, tokenID);
         _nftInfoForSale[collection][tokenID] = SaleInfo({
@@ -181,5 +182,16 @@ contract Marketplace is ERC721, ReentrancyGuard,  IMarketplace{
 
     function getCollectionInfo(address collection) external view returns(CollectionInfo memory) {
         return _addedCollections[collection];
+    }
+    function isOwner(address _isOwner) internal view {
+        if (!(_isOwner == msg.sender)) {
+            revert Marketplace__NotOwner();
+        }
+    }
+    function tokenOwner(
+        address collection,
+        uint256 tokenId
+    ) internal view returns (address) {
+        return IERC721(collection).ownerOf(tokenId);
     }
 }

@@ -10,6 +10,8 @@ interface IMarketplace {
     error Marketplace__TokenAlreadyForSale();   //add check for this
     error Marketplace__TransferFailed();//add check for this
     error Marketplace__InvalidPrice();
+    error Marketplace__IncorrectPrice();  
+    error Marketplace__IncorrectListingPrice();
     error Marketplace__IncorrectSupply();
     error Marketplace__MaxSupply();
     error Marketplace__NotApproved();
@@ -88,11 +90,3 @@ interface IMarketplace {
         uint256 tokenID
     ) external payable;
 }
-
-
-/// @notice Create a new listing for an NFT
-    /// @param collection The address of the NFT collection
-    /// @param tokenURI The URI of the token to list
-    /// @param supply The maximum supply of the token
-    /// @param price The price to list the token for
-    /// @return The address of the newly created listing
